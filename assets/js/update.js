@@ -40,12 +40,99 @@
  *
  */
 
- (function(){
+(function() {
 
-   $(function(){
+  $(function() {
+    let selected;
 
     //code goes here
+    $('#updateStudentForm :input').prop("disabled", true);
 
-   })
+    $("#student_id").on("change", function() {
+      selected = $(this).find("option:selected").val();
 
- })();
+      $('#updateStudentForm :input').prop("disabled", false);
+
+
+      $.get("http://localhost:1337/student/" + selected, function(student) {
+
+        //loop over the student i got back from the api
+        $.each(student, function(key, val) {
+          //find the input field that matches the name of the key
+          let el = $('[name="' + key + '"]');
+          //find the type of field that we selected
+          let type = el.attr('type');
+
+          //based on the type choose how we set the value
+          switch (type) {
+            case 'checkbox':
+              el.attr('checked', 'checked');
+              break;
+            case 'radio':
+              el.filter('[value="' + val + '"]').attr('checked', 'checked');
+              break;
+            default:
+              el.val(val);
+          }
+        })
+      });
+    })
+    $("#updateStudentForm").on("submit", function(e) {
+
+      //prevents default behavior of form submitting
+      e.preventDefault()
+
+      $.ajax({
+        url: "http://localhost:1337/student/" + selected,
+        data: $("#updateStudentForm").serialize(),
+        method: "PUT",
+        success: function(data) {
+
+
+          //   //disable form fields again
+          $("#updateStudentForm:input").prop("disabled", true);
+
+          $("#updateStudentForm")[0].reset()
+
+        }
+      })
+    })
+    $('#updateStudentForm').validate({
+      errorClass: "text-danger",
+      rules: {
+        first_name: {
+          required: true,
+          minlength: 2
+        },
+        last_name: {
+          required: true,
+          minlength: 2
+        },
+        start_date: {
+          dateISO: true
+        }
+      },
+
+
+      messages: {
+        first_name: {
+          required: "We need your first name",
+          minlength: jQuery.validator.format("At least 2 characters required!")
+        },
+
+        last_name: {
+          required: "We need your first name",
+          minlength: jQuery.validator.format("At least 2 characters required!")
+        },
+        start_date: {
+          required: "We need your first name",
+          dateISO: jQuery.validator.format("should be in yyyy-mm-dd")
+        },
+
+
+      }
+
+    });
+  })
+
+})();
